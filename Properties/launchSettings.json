@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "cf-sharp": {
+      "commandName": "Project",
+      "commandLineArgs": "local"
+    }
+  }
+}
