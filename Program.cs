@@ -1,8 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
 
-namespace Codeforces;
-
 public class App
 {
     public static void Main(string[] args)
@@ -15,9 +13,11 @@ public class Runner
 {
     private static bool _isLocal = false;
     private const string LOCAL_ARG = "local";
-    private const string INPUT_FILE = "input_dvsrh.txt";
-    private const string OUTPUT_FILE = "output_dvsrh.txt";
-    private FastIO io;
+    private const string INPUT_FILE = "../../../LocalFiles/input_dvsrh.txt";
+    private const string OUTPUT_FILE = "../../../LocalFiles/output_dvsrh.txt";
+    private FastIN IN;
+    private FastOUT OUT;
+    private Stopwatch? _stopwatch;
 
     public Runner(string[] args)
     {
@@ -28,31 +28,28 @@ public class Runner
 
         if (_isLocal)
         {
-            if (!File.Exists(INPUT_FILE))
-            {
-                throw new Exception("Could not find input file");
-            }
-            if (!File.Exists(OUTPUT_FILE))
-            {
-                throw new Exception("Could not find output file");
-            }
-            Console.SetIn(new StreamReader(INPUT_FILE));
-            Console.SetOut(new StreamWriter(OUTPUT_FILE));
+            _stopwatch = new Stopwatch();
+            _stopwatch.Start();
         }
 
-        io = new FastIO(true);
+        IN = new FastIN(_isLocal, true, INPUT_FILE);
+        OUT = new FastOUT(_isLocal, OUTPUT_FILE);
 
-        _Run();
+        //_Run();
+        _Solve();
 
         if (_isLocal)
         {
-            Console.Out.Flush();
+            _stopwatch!.Stop();
+            OUT.WriteLine(Utils.ConvertToString("\n\n", "Time taken: ", _stopwatch!.ElapsedMilliseconds, "ms"));
         }
+
+        OUT.Flush();
     }
 
     private void _Run()
     {
-        int _t = io.Next<int>();
+        int _t = IN.Next<int>();
         while (_t-- > 0)
         {
             _Solve();
@@ -61,22 +58,58 @@ public class Runner
 
     private void _Solve()
     {
-        int n = io.Next<int>();
-
+        int solvableProblemsCount = 0;
+        int n = IN.Next<int>();
+        for (int i = 0; i < n; i++)
+        {
+            int opinionsCount = 0;
+            for (int j = 0; j < 3; j++)
+            {
+                int opinion = IN.Next<int>();
+                opinionsCount += opinion;
+            }
+            if (opinionsCount > 1)
+            {
+                solvableProblemsCount++;
+            }
+        }
+        OUT.WriteLine(Utils.ConvertToString(solvableProblemsCount));
     }
 }
 
-public class FastIO
+public static class Utils
 {
-    private readonly Stream _stream = Console.OpenStandardInput();
+    public static string ConvertToString(params object[] paramsArr)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (object param in paramsArr)
+        {
+            sb.Append(param);
+        }
+        return sb.ToString();
+    }
+}
+
+public class FastIN : IDisposable
+{
+    private readonly Stream _stream;
     private readonly byte[] _buffer = new byte[1 << 16];
     private int _ptr = 0;
     private int _len = 0;
     private bool _useCfInputFormat = false;
 
-    public FastIO(bool useCfInputFormat = false)
+    public FastIN(bool useLocal = false, bool useCfInputFormat = false, string inputFile = "")
     {
         _useCfInputFormat = useCfInputFormat;
+
+        if (useLocal && !string.IsNullOrWhiteSpace(inputFile))
+        {
+            _stream = new FileStream(inputFile, FileMode.OpenOrCreate, FileAccess.Read);
+        }
+        else
+        {
+            _stream = Console.OpenStandardInput();
+        }
     }
 
     private byte Read()
@@ -359,5 +392,114 @@ public class FastIO
         }
 
         return res;
+    }
+
+    ~FastIN()
+    {
+        _stream.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _stream.Dispose();
+    }
+}
+
+public class FastOUT : IDisposable
+{
+    private readonly Stream _stream;
+    private readonly byte[] _buffer = new byte[1 << 16];
+    private int _ptr = 0;
+
+    public FastOUT(bool useLocal = false, string outputFile = "")
+    {
+        if (useLocal && !string.IsNullOrWhiteSpace(outputFile))
+        {
+            _stream = new FileStream(outputFile, FileMode.Create, FileAccess.Write);
+        }
+        else
+        {
+            _stream = Console.OpenStandardOutput();
+        }
+    }
+
+    private void FlushBuffer()
+    {
+        _stream.Write(_buffer, 0, _ptr);
+        _stream.Flush();
+        _ptr = 0;
+    }
+
+    public void WriteChar(char c)
+    {
+        if (_ptr == _buffer.Length)
+        {
+            FlushBuffer();
+        }
+        _buffer[_ptr++] = (byte)c;
+    }
+
+    public void WriteLine(string line = "")
+    {
+        int n = line.Length;
+        for (int i = 0; i < n; i++)
+        {
+            WriteChar(line[i]);
+        }
+        WriteChar('\n');
+    }
+
+    public void WriteInt(int x)
+    {
+        if (x == 0)
+        {
+            WriteChar('0');
+            return;
+        }
+
+        if (x == int.MinValue)
+        {
+            WriteLine("-2147483648");
+            return;
+        }
+
+        if (x < 0)
+        {
+            WriteChar('-');
+            x = -x;
+        }
+
+        int start = _ptr;
+
+        while (x > 0)
+        {
+            if (_ptr == _buffer.Length) FlushBuffer();
+            _buffer[_ptr++] = (byte)('0' + (x % 10));
+            x /= 10;
+        }
+
+        Array.Reverse(_buffer, start, _ptr - start);
+    }
+
+    public void WriteLineInt(int x)
+    {
+        WriteInt(x);
+        WriteChar('\n');
+    }
+
+    public void Flush()
+    {
+        FlushBuffer();
+    }
+
+    ~FastOUT()
+    {
+        Flush();
+    }
+
+    public void Dispose()
+    {
+        Flush();
+        _stream.Dispose();
     }
 }
