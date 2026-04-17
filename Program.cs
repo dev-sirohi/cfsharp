@@ -15,8 +15,8 @@ public class Runner
     private const string LOCAL_ARG = "local";
     private const string INPUT_FILE = "../../../LocalFiles/input_dvsrh.txt";
     private const string OUTPUT_FILE = "../../../LocalFiles/output_dvsrh.txt";
-    private FastIN IN;
-    private FastOUT OUT;
+    private FastIn In;
+    private FastOut Out;
     private Stopwatch? _stopwatch;
 
     public Runner(string[] args)
@@ -32,8 +32,8 @@ public class Runner
             _stopwatch.Start();
         }
 
-        IN = new FastIN(_isLocal, true, INPUT_FILE);
-        OUT = new FastOUT(_isLocal, OUTPUT_FILE);
+        In = new FastIn(_isLocal, true, INPUT_FILE);
+        Out = new FastOut(_isLocal, OUTPUT_FILE);
 
         //_Run();
         _Solve();
@@ -41,15 +41,15 @@ public class Runner
         if (_isLocal)
         {
             _stopwatch!.Stop();
-            OUT.WriteLine(Utils.ConvertToString("\n\n", "Time taken: ", _stopwatch!.ElapsedMilliseconds, "ms"));
+            Out.WriteLine(StringUtils.ToString("\n\n", "Time taken: ", _stopwatch!.ElapsedMilliseconds, "ms"));
         }
 
-        OUT.Flush();
+        Out.Flush();
     }
 
     private void _Run()
     {
-        int _t = IN.Next<int>();
+        int _t = In.Next<int>();
         while (_t-- > 0)
         {
             _Solve();
@@ -58,28 +58,28 @@ public class Runner
 
     private void _Solve()
     {
-        int solvableProblemsCount = 0;
-        int n = IN.Next<int>();
-        for (int i = 0; i < n; i++)
+        int queueSize = In.Next<int>();
+        int timeSpan = In.Next<int>();
+        char[] queue = In.GetArray<char>(queueSize);
+        while (timeSpan-- > 0)
         {
-            int opinionsCount = 0;
-            for (int j = 0; j < 3; j++)
+            for (int i = queueSize - 2; i >= 0; i--)
             {
-                int opinion = IN.Next<int>();
-                opinionsCount += opinion;
-            }
-            if (opinionsCount > 1)
-            {
-                solvableProblemsCount++;
+                if (queue[i] == 'B' && queue[i + 1] == 'G')
+                {
+                    queue[i] = 'G';
+                    queue[i + 1] = 'B';
+                    i--;
+                }
             }
         }
-        OUT.WriteLine(Utils.ConvertToString(solvableProblemsCount));
+        Out.WriteLine(StringUtils.ToString(queue));
     }
 }
 
-public static class Utils
+public static class StringUtils
 {
-    public static string ConvertToString(params object[] paramsArr)
+    public static string ToString(params object[] paramsArr)
     {
         StringBuilder sb = new StringBuilder();
         foreach (object param in paramsArr)
@@ -88,9 +88,59 @@ public static class Utils
         }
         return sb.ToString();
     }
+
+    public static string ToString(char[] arr)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (object param in arr)
+        {
+            sb.Append(param);
+        }
+        return sb.ToString();
+    }
+
+    public static string ToString(string[] arr)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (object param in arr)
+        {
+            sb.Append(param);
+        }
+        return sb.ToString();
+    }
+
+    public static string ToString(int[] arr)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (object param in arr)
+        {
+            sb.Append(param);
+        }
+        return sb.ToString();
+    }
+
+    public static string ToString(long[] arr)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (object param in arr)
+        {
+            sb.Append(param);
+        }
+        return sb.ToString();
+    }
+
+    public static string ToString(double[] arr)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (object param in arr)
+        {
+            sb.Append(param);
+        }
+        return sb.ToString();
+    }
 }
 
-public class FastIN : IDisposable
+public class FastIn : IDisposable
 {
     private readonly Stream _stream;
     private readonly byte[] _buffer = new byte[1 << 16];
@@ -98,7 +148,7 @@ public class FastIN : IDisposable
     private int _len = 0;
     private bool _useCfInputFormat = false;
 
-    public FastIN(bool useLocal = false, bool useCfInputFormat = false, string inputFile = "")
+    public FastIn(bool useLocal = false, bool useCfInputFormat = false, string inputFile = "")
     {
         _useCfInputFormat = useCfInputFormat;
 
@@ -126,7 +176,7 @@ public class FastIN : IDisposable
         return _buffer[_ptr++];
     }
 
-    public int NextInt()
+    private int NextInt()
     {
         int c = Read();
         while (c <= ' ')
@@ -155,7 +205,7 @@ public class FastIN : IDisposable
         return sign * val;
     }
 
-    public long NextLong()
+    private long NextLong()
     {
         int c = Read();
         while (c <= ' ')
@@ -184,7 +234,7 @@ public class FastIN : IDisposable
         return sign * val;
     }
 
-    public double NextDouble()
+    private double NextDouble()
     {
         int c = Read();
 
@@ -230,7 +280,7 @@ public class FastIN : IDisposable
         return sign * result;
     }
 
-    public char NextChar()
+    private char NextChar()
     {
         int c = Read();
         while (c <= ' ')
@@ -250,7 +300,7 @@ public class FastIN : IDisposable
         return '\0';
     }
 
-    public string NextLine()
+    private string NextLine()
     {
         int c = Read();
         while (c < ' ')
@@ -273,7 +323,7 @@ public class FastIN : IDisposable
         return sb.ToString();
     }
 
-    public StringBuilder NextLine(bool useStringBuilder = true)
+    private StringBuilder NextLine(bool useStringBuilder = true)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -326,75 +376,54 @@ public class FastIN : IDisposable
         throw new NotSupportedException(typeof(T).ToString());
     }
 
-    public T[] GetArray<T>(int size = 0, char sep = ',', bool skipBraceCheck = false)
+    private T GetValueFromAscii<T>(int c)
     {
-        if (_useCfInputFormat)
+        if (typeof(T) == typeof(int))
         {
-            sep = ' ';
-            skipBraceCheck = true;
+            return (T)(object)(c - '0');
         }
 
-        if (size <= 0)
+        if (typeof(T) == typeof(long))
         {
-            return new T[0];
+            return (T)(object)(c - '0');
         }
 
-        T[] res = new T[size];
-
-        int c = Read();
-
-        // skip whitespace
-        while (c <= ' ')
+        if (typeof(T) == typeof(double))
         {
-            if (c == 0)
-            {
-                return res;
-            }
-            c = Read();
+            return (T)(object)(c - '0');
         }
 
-        bool isBracketed = (c == '[');
-
-        if (!isBracketed && !skipBraceCheck)
+        if (typeof(T) == typeof(char))
         {
-            for (int i = 0; i < size; i++)
-            {
-                res[i] = Next<T>();
-            }
-            return res;
+            return (T)(object)((char)c);
         }
 
-        for (int i = 0; i < size; i++)
+        if (typeof(T) == typeof(string))
         {
-            while (c != 0 && c != '-' && (c < '0' || c > '9'))
-            {
-                c = Read();
-            }
-
-            res[i] = Next<T>();
-
-            c = Read();
-
-            while (c <= ' ')
-            {
-                c = Read();
-            }
-
-            if (c == sep)
-            {
-                continue;
-            }
-
-            if (c == ']')
-            {
-                break;
-            }
+            return (T)(object)((char)c);
         }
 
-        return res;
+        throw new NotSupportedException(typeof(T).ToString());
     }
 
-    ~FastIN()
+    public T[] GetArray<T>(int size)
+    {
+        T[] arr = new T[size];
+        if (size == 0)
+        {
+            return arr;
+        }
+
+        int index = 0;
+        while (size-- > 0)
+        {
+            arr[index++] = Next<T>();
+        }
+
+        return arr;
+    }
+
+    ~FastIn()
     {
         _stream.Dispose();
     }
@@ -405,13 +434,13 @@ public class FastIN : IDisposable
     }
 }
 
-public class FastOUT : IDisposable
+public class FastOut : IDisposable
 {
     private readonly Stream _stream;
     private readonly byte[] _buffer = new byte[1 << 16];
     private int _ptr = 0;
 
-    public FastOUT(bool useLocal = false, string outputFile = "")
+    public FastOut(bool useLocal = false, string outputFile = "")
     {
         if (useLocal && !string.IsNullOrWhiteSpace(outputFile))
         {
@@ -481,18 +510,12 @@ public class FastOUT : IDisposable
         Array.Reverse(_buffer, start, _ptr - start);
     }
 
-    public void WriteLineInt(int x)
-    {
-        WriteInt(x);
-        WriteChar('\n');
-    }
-
     public void Flush()
     {
         FlushBuffer();
     }
 
-    ~FastOUT()
+    ~FastOut()
     {
         Flush();
     }
